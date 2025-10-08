@@ -48,4 +48,4 @@ void app_main(void) // Función principal del programa
         sos();
         vTaskDelay(pdMS_TO_TICKS(1000)); // Esperamos 1 segundo
     }
-}
+} 
