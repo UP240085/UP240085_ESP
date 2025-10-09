@@ -7,9 +7,37 @@
 #define LED    GPIO_NUM_2
 #define BUTTON GPIO_NUM_5
 
+void punto()
+{
+    gpio_set_level(LED, 1); // Encendemos el LED
+    vTaskDelay(pdMS_TO_TICKS(200)); // Esperamos 200 ms
+    gpio_set_level(LED, 0); // Apagamos el LED
+    vTaskDelay(pdMS_TO_TICKS(200)); // Esperamos 200 ms
+}
 
+void raya()
+{
+    gpio_set_level(LED, 1); // Encendemos el LED
+    vTaskDelay(pdMS_TO_TICKS(500)); // Esperamos 500 ms
+    gpio_set_level(LED, 0); // Apagamos el LED
+    vTaskDelay(pdMS_TO_TICKS(500)); // Esperamos 500 ms
+}
 
-
+void sos()
+{
+    for(int i =0; i < 3; i++)
+    {
+        punto();
+    }
+    for (int i = 0; i < 3; i++)
+    {
+        raya();
+    }
+     for(int i =0; i < 3; i++)
+     {
+        punto();
+    }
+}
 
 void app_main(void)
 {
@@ -34,7 +62,7 @@ void app_main(void)
         // Si el botón está presionado (nivel bajo)
         if(status == false)
         {
-            gpio_set_level(LED, 1); // Enciende el LED
+            sos();
         }
         else
         {
@@ -42,7 +70,10 @@ void app_main(void)
         }
 
         // Espera 20 ms antes de repetir
-        vTaskDelay(pdMS_TO_TICKS(20)) ;
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
 
 }
+
+
+
