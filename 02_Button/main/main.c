@@ -61,6 +61,7 @@ void app_main(void)
 
         // Si el botón está presionado (nivel bajo)
         if(status == false)
+
         {
             sos();
         }
