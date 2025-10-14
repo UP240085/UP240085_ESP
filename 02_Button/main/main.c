@@ -3,10 +3,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define LED    GPIO_NUM_2
+#define LED    GPIO_NUM_15
 #define BUTTON GPIO_NUM_5
 
 bool sos_activo = false;
+TickType_t last_click_time = 0;
+int click_count = 0;
 
 void punto()
 {
@@ -31,49 +33,6 @@ void sos()
     for(int i = 0; i < 3; i++) punto();
 }
 
-bool detectClick(bool* doubleClickDetected)
-{
-    const TickType_t debounceDelay = pdMS_TO_TICKS(50);
-    const TickType_t doubleClickTimeout = pdMS_TO_TICKS(500);
-    TickType_t startTime;
-
-    // Espera la primera pulsación
-    while (gpio_get_level(BUTTON) == 1)
-    {
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-
-    vTaskDelay(debounceDelay);
-
-    while (gpio_get_level(BUTTON) == 0)
-    {
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-
-    startTime = xTaskGetTickCount();
-
-    // Espera segunda pulsación para detectar doble clic
-    while ((xTaskGetTickCount() - startTime) < doubleClickTimeout)
-    {
-        if (gpio_get_level(BUTTON) == 0)
-        {
-            vTaskDelay(debounceDelay);
-            while (gpio_get_level(BUTTON) == 0)
-            {
-                vTaskDelay(pdMS_TO_TICKS(10));
-            }
-
-            *doubleClickDetected = true;
-            return true;
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-
-    *doubleClickDetected = false;
-    return true; // Se detectó al menos un clic
-}
-
 void app_main(void)
 {
     gpio_reset_pin(LED);
@@ -83,30 +42,45 @@ void app_main(void)
     gpio_set_pull_mode(BUTTON, GPIO_PULLUP_ONLY);
     gpio_set_direction(BUTTON, GPIO_MODE_INPUT);
 
+    int last_button_state = 1;
+
     while (true)
     {
-        bool doubleClick = false;
+        int current_button_state = gpio_get_level(BUTTON);
 
-        if (detectClick(&doubleClick))
+        if (current_button_state == 0 && last_button_state == 1)
         {
-            if (doubleClick)
+            TickType_t now = xTaskGetTickCount();
+
+            if ((now - last_click_time) < pdMS_TO_TICKS(1000))
             {
-                sos_activo = false; // Apagar con doble clic
+                click_count++;
             }
             else
             {
-                sos_activo = true; // Encender con clic simple
+                click_count = 1;
+            }
+
+            last_click_time = now;
+
+            if (click_count == 2)
+            {
+                sos_activo = false; // doble clic  apagar
+                click_count = 0;
+            }
+            else if (click_count == 1)
+            {
+                sos_activo = true; // clic simple  encender
             }
         }
+
+        last_button_state = current_button_state;
 
         if (sos_activo)
         {
             sos();
         }
 
-        vTaskDelay(pdMS_TO_TICKS(20));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
-
-
-
