@@ -47,7 +47,7 @@ void app_main(void)
         }
         if (ret2 != ESP_OK) {
             //printf("ADC read failed\n");
-            ESP_LOGW(ADC, "Error\n")
+            ESP_LOGW(ADC, "Error\n");
             continue;
         }
         float voltage = adc_raw * (3.3 / 4095); // Convierte el valor ADC a voltaje (asumiendo Vref = 3.3V y resolución de 12 bits)
