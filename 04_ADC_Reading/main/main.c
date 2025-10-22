@@ -2,6 +2,10 @@
 #include <stdio.h> // Incluye la biblioteca estándar de entrada/salida
 #include "freertos/FreeRTOS.h" // Incluye la biblioteca de FreeRTOS
 #include "esp_adc/adc_oneshot.h" // Incluye el controlador ADC en modo de una sola toma
+#include "esp_log.h"
+
+static const char *ESP = "Mi ESP";
+static const char *ADC = "Soy el ADC";
 
 int adc_value = 0; // Variable para almacenar el valor leído del ADC
 adc_oneshot_unit_handle_t adc1_handle; // Manejador para la unidad ADC1
@@ -21,7 +25,9 @@ void configuracion(void){
         .bitwidth = ADC_BITWIDTH_12, // Ancho de datos de 12 bits
     };
     adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_0, &channel_config); // Configura el canal 0 del ADC1
+    
     adc_oneshot_config_channel(adc1_handle, ADC_CHANNEL_3, &channel_config); // Configura el canal 0 del ADC1
+    ESP_LOGI(ESP, "Ya terminé la configuración \n")
 }
 
 void app_main(void)
@@ -40,14 +46,15 @@ void app_main(void)
             continue; // Si la lectura falla, continúa con la siguiente iteración
         }
         if (ret2 != ESP_OK) {
-            printf("ADC read failed\n");
+            //printf("ADC read failed\n");
+            ESP_LOGW(ADC, "Error\n")
             continue;
         }
         float voltage = adc_raw * (3.3 / 4095); // Convierte el valor ADC a voltaje (asumiendo Vref = 3.3V y resolución de 12 bits)
-                float voltage2 = adc_raw2 * (3.3 / 4095);
+        float voltage2 = adc_raw2 * (3.3 / 4095);
 
         // Imprime el valor leído por el ADC
-        printf("ADC1 %d, ADC2: %d, V1 %.2fV, V2 %0.2f\n", adc_raw, adc_raw2, voltage,voltage2);
+        printf("ADC1 %d, ADC2: %d, V1 %.2fV, V2 %0.2fV\n", adc_raw, adc_raw2, voltage,voltage2);
         vTaskDelay(pdMS_TO_TICKS(100)); // Espera 100 ms antes de la siguiente lectura
     }
 }

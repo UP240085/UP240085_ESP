@@ -41,6 +41,7 @@ static void IRAM_ATTR gpio_isr_handler(void *arg)
 }
 
 // Funciones para SOS 
+
 void punto()
 {
     gpio_set_level(LED, 1);
@@ -67,6 +68,8 @@ void sos()
 // Función principal del programa
 void app_main(void)
 {
+    gpio_reset_pin(LED);
+    gpio_set_direction(LED, GPIO_MODE_OUTPUT);
     gpio_reset_pin(INT_PIN); // Resetea la configuración previa del pin
     gpio_set_direction(INT_PIN, GPIO_MODE_INPUT); // Configura el pin como entrada
 
@@ -83,7 +86,7 @@ void app_main(void)
         {
             printf("Interrupción #%d\n", int_count);
             button_state = false;
-
+            vTaskDelay(pdMS_TO_TICKS(50));
             if (int_count == 3) {
                 sos(); // Ejecuta la función SOS
                 int_count = 0; // Reinicia el contador
