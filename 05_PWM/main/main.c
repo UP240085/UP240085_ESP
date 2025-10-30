@@ -3,10 +3,37 @@
 #include "freertos/FreeRTOS.h" // Incluye la biblioteca principal de FreeRTOS
 #include "driver/gpio.h" // Incluye el controlador para GPIO
 #include "driver/ledc.h" // Incluye el controlador para LEDC (PWM)
+#include "esp_adc/adc_oneshot.h" // Incluye el controlador ADC en modo de una sola toma
+#include "esp_log.h"
 
 #define AIN1 GPIO_NUM_5
 #define AIN2 GPIO_NUM_17
 #define PWMA GPIO_NUM_16
+
+static const char *ESP = "Mi ESP";
+static const char *ADC = "Soy el ADC";
+
+int adc_value = 0; // Variable para almacenar el valor leído del ADC
+adc_oneshot_unit_handle_t adc_handle; // Manejador para la unidad ADC1
+int adc_raw = 0; // Variable para almacenar el valor crudo del ADC 
+
+void configuracionADC(void){
+    
+    adc_oneshot_unit_init_cfg_t init_config = {
+        .unit_id = ADC_UNIT_2, // Identificador de la unidad ADC1
+        .ulp_mode = ADC_ULP_MODE_DISABLE, // Deshabilita el modo ULP
+    };
+    adc_oneshot_new_unit(&init_config, &adc_handle); // Inicializa el ADC
+
+    adc_oneshot_chan_cfg_t channel_config = {
+        .atten = ADC_ATTEN_DB_12, // Atenuación de 12dB
+        .bitwidth = ADC_BITWIDTH_12, // Ancho de datos de 12 bits
+    };
+
+    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_3, &channel_config); // Configura el canal 0 del ADC1
+    ESP_LOGI(ESP, "Ya terminé la configuración \n");
+}
+
 
 esp_err_t configureGpio(void)
 {
@@ -54,6 +81,7 @@ void app_main(void) // Función principal de la aplicación
 {
     configureGpio(); // Configura los pines GPIO
     setupPWM(); // Configura el PWM 
+    configuracionADC(); //Configura ADC
 
     gpio_set_level(AIN1, 1); // Establece AIN1 en alto
     gpio_set_level(AIN2, 0); // Establece AIN2 en
@@ -61,20 +89,14 @@ void app_main(void) // Función principal de la aplicación
 
     while(1) // Bucle infinito
     {
-        // Incrementa el duty cycle de 0 a 254
-        for(int i = 0; i < 255; i++)
-        {
-            ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, i, 0); // Actualiza el duty cycle
-            printf("Duty: %d\n", i); // Imprime el valor actual del duty cycle
-            vTaskDelay(pdMS_TO_TICKS(10)); // Espera 10 ms
-        }
+        esp_err_t ret = adc_oneshot_read(adc_handle, ADC_CHANNEL_3, &adc_raw);
+        int duty = (adc_raw * 255) / 4095;
 
-        // Decrementa el duty cycle de 255 a 1
-        for(int i = 255; i > 0; i--)
-        {
-            ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, i, 0);     // Actualiza el duty cycle
-            printf("Duty: %d\n", i); // Imprime el valor actual del duty cycle
+            ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty , 0); // Actualiza el duty cycle
+            printf("ADC: %d, Duty: %d\n", adc_raw, duty); // Imprime el valor actual del duty cycle
             vTaskDelay(pdMS_TO_TICKS(100)); // Espera 10 ms
-        }
+
+    
     }
 }
+
