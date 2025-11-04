@@ -1,10 +1,9 @@
-
-
-#include <stdio.h> // Incluye la biblioteca estándar de entrada/salida
-#include "freertos/FreeRTOS.h" // Incluye la biblioteca principal de FreeRTOS
-#include "driver/gpio.h" // Incluye el controlador para GPIO
-#include "driver/ledc.h" // Incluye el controlador para LEDC (PWM)
-#include "esp_adc/adc_oneshot.h" // Incluye el controlador ADC en modo de una sola toma
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/gpio.h"
+#include "driver/ledc.h"
+#include "esp_adc/adc_oneshot.h"
 #include "esp_log.h"
 
 #define AIN1 GPIO_NUM_5
@@ -12,98 +11,92 @@
 #define PWMA GPIO_NUM_16
 
 static const char *ESP = "Mi ESP";
-static const char *ADC = "Soy el ADC";
 
-int adc_value = 0; // Variable para almacenar el valor leído del ADC
-adc_oneshot_unit_handle_t adc_handle; // Manejador para la unidad ADC1
-int adc_raw = 0; // Variable para almacenar el valor crudo del ADC 
+adc_oneshot_unit_handle_t adc_handle;
+int adc_raw = 0; // Variable global compartida
 
-void configuracionADC(void){
-    
+void configuracionADC(void) {
     adc_oneshot_unit_init_cfg_t init_config = {
-        .unit_id = ADC_UNIT_1, // Identificador de la unidad ADC1
-        .ulp_mode = ADC_ULP_MODE_DISABLE, // Deshabilita el modo ULP
+        .unit_id = ADC_UNIT_1,
+        .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
-    adc_oneshot_new_unit(&init_config, &adc_handle); // Inicializa el ADC
+    adc_oneshot_new_unit(&init_config, &adc_handle);
 
     adc_oneshot_chan_cfg_t channel_config = {
-        .atten = ADC_ATTEN_DB_12, // Atenuación de 12dB
-        .bitwidth = ADC_BITWIDTH_12, // Ancho de datos de 12 bits
+        .atten = ADC_ATTEN_DB_12,
+        .bitwidth = ADC_BITWIDTH_12,
     };
-
-    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_0, &channel_config); // Configura el canal 0 del ADC1
-    ESP_LOGI(ESP, "Ya terminé la configuración \n");
+    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_3, &channel_config);
+    ESP_LOGI(TAG, "ADC configurado");
 }
 
-
-esp_err_t configureGpio(void)
-{
-    // Configure GPIO pins for input and output modes
-    gpio_reset_pin(AIN1);   // Reset AIN1 pin
-    gpio_reset_pin(AIN2);   // Reset AIN2 pin
-    gpio_reset_pin(PWMA);   // Reset PWMA pin
+esp_err_t configureGpio(void) {
+    gpio_reset_pin(AIN1);
+    gpio_reset_pin(AIN2);
+    gpio_reset_pin(PWMA);
     gpio_set_direction(AIN1, GPIO_MODE_OUTPUT);
     gpio_set_direction(AIN2, GPIO_MODE_OUTPUT);
     gpio_set_direction(PWMA, GPIO_MODE_OUTPUT);
-    return ESP_OK; // Return success
+    return ESP_OK;
 }
 
-void setupPWM(void)
-{
-    // Configuración del canal PWM
+void setupPWM(void) {
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
-        .duty_resolution = LEDC_TIMER_8_BIT, // Resolución de 8 bits
+        .duty_resolution = LEDC_TIMER_8_BIT,
         .timer_num = LEDC_TIMER_0,
-        .freq_hz = 5000, // Frecuencia de 5 kHz
+        .freq_hz = 5000,
         .clk_cfg = LEDC_AUTO_CLK,
-        .deconfigure = false // No desconfigurar el temporizador
+        .deconfigure = false
     };
     ledc_timer_config(&ledc_timer);
 
-    // Configuración del canal A
     ledc_channel_config_t ledc_channel_A = {
-        .gpio_num = PWMA, // Primero el GPIO
+        .gpio_num = PWMA,
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .channel = LEDC_CHANNEL_0,
         .intr_type = LEDC_INTR_DISABLE,
         .timer_sel = LEDC_TIMER_0,
         .duty = 0,
         .hpoint = 0,
-        .sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD, // Deshabilitar el modo de sueño
-        .flags = {
-            .output_invert = 0 // No invertir la salida
-        }};
+        .flags.output_invert = 0
+    };
     ledc_channel_config(&ledc_channel_A);
-    ledc_fade_func_install(0); // Instala la función de desvanecimiento
+    ledc_fade_func_install(0);
 }
-void LecturaADCTask(void *pvParameters)
-{
-    while(1)
-        {esp_err_t ret = adc_oneshot_read(adc_handle, ADC_CHANNEL_3, &adc_raw);
+
+void LecturaADCTask(void *pvParameters) {
+    while (1) {
+        adc_oneshot_read(adc_handle, ADC_CHANNEL_3, &adc_raw);
+        vTaskDelay(pdMS_TO_TICKS(100)); // 100 ms de retardo
+    }
+}
+
+void GiroMotorTask(void *pvParameters) {
+    while (1) {
         int duty = (adc_raw * 255) / 4095;
-        printf("ADC: %d, Duty: %d\n");
+
+        if (adc_raw <= 2048) {
+            gpio_set_level(AIN1, 1);
+            gpio_set_level(AIN2, 0);
+        } else {
+            gpio_set_level(AIN1, 0);
+            gpio_set_level(AIN2, 1);
         }
+
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+
+        ESP_LOGI(ESP, "ADC: %d | Duty: %d | Giro: %s", adc_raw, duty, adc_raw <= 2048 ? "Horario" : "Antihorario");
+        vTaskDelay(pdMS_TO_TICKS(100)); // 100 ms de retardo
+    }
 }
 
-void GiroMotorTask(void *duty)
-{
-    while(1)
-    if (duty <= 2048)
-        {}
-    else
+void app_main(void) {
+    configureGpio();
+    setupPWM();
+    configuracionADC();
 
-
-
-
-}
-void app_main(void) // Función principal de la aplicación
-{
-    configureGpio(); // Configura los pines GPIO
-    setupPWM(); // Configura el PWM 
-    configuracionADC(); //Configura ADC
-
-    gpio_set_level(AIN1, 1); // Establece AIN1 en alto
-    gpio_set_level(AIN2, 0); // Establece AIN2 en
-
+    xTaskCreate(LecturaADCTask, "Lectura ADC", 2048, NULL, 1, NULL);
+    xTaskCreate(GiroMotorTask, "Giro Motor", 2048, NULL, 1, NULL);
 }
