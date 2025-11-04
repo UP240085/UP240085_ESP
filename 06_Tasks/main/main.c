@@ -17,7 +17,7 @@ int adc_raw = 0; // Variable global compartida
 
 void configuracionADC(void) {
     adc_oneshot_unit_init_cfg_t init_config = {
-        .unit_id = ADC_UNIT_1,
+        .unit_id = ADC_UNIT_2,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
     adc_oneshot_new_unit(&init_config, &adc_handle);
@@ -27,7 +27,7 @@ void configuracionADC(void) {
         .bitwidth = ADC_BITWIDTH_12,
     };
     adc_oneshot_config_channel(adc_handle, ADC_CHANNEL_3, &channel_config);
-    ESP_LOGI(TAG, "ADC configurado");
+    ESP_LOGI(ESP, "ADC configurado");
 }
 
 esp_err_t configureGpio(void) {
