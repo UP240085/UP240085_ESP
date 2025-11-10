@@ -1,5 +1,5 @@
 ## Circuito Botón
-![image alt](https://github.com/UP240085/UP240085_ESP/blob/ac340809ecc8b42c522a601cc88048d02a5b9860/Circuito%202.jpg)
+![Circuito 2](https://github.com/UP240085/UP240085_ESP/blob/ac340809ecc8b42c522a601cc88048d02a5b9860/Circuito%202.jpg)
 
 En este circuito conectamos un botón a una entrada de nuestro microcontrolador
 Así que creamos un programa en el que al presionar el botón una vez, se ejecute una función de SOS en el LED colocado, además 
