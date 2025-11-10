@@ -1,6 +1,6 @@
 ## Circuito Interrupción Externa
 
-![img alt](https://github.com/UP240085/UP240085_ESP/blob/84a4a8bb63242c9113c809a27a6d694063bec012/Circuito%203.jpg)
+![Circuito 3](https://github.com/UP240085/UP240085_ESP/blob/84a4a8bb63242c9113c809a27a6d694063bec012/Circuito%203.jpg)
 
 En este circuito y programa se conecta un botón a una entrada de nuestro microcontrolador.
 
