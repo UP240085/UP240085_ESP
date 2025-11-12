@@ -1,6 +1,7 @@
 #include "cabeceras.h"
 QTR8A sensor; 
 uint16_t sensor_values[SENSOR_COUNT];
+uint16_t position;
 
 //void leerLinea(void *pvParam){}
 //void control(void *pvParam){}
@@ -48,7 +49,7 @@ esp_err_t createSensor(void)
     sensor.setTimeout(2500); //Set the timeout for Analog sensors
     sensor.setSamplesPerSensor(15); //Set the number of samples per sensor
     sensor.setEmitterPin(IR); //Set the emitter pin for the sensor
-    // sensor.calibrate(); // Calibrate the sensor with emitters on
+    sensor.calibrate(); // Calibrate the sensor with emitters on
     return ESP_OK;
 }
 
@@ -75,5 +76,19 @@ extern "C" void app_main(void)
 {
     configureGpio();
     createSensor();
+
+   // while(gpio_get_level(CAL) == 1) // Botón sin presionar
+   // {
+   //     vTaskDelay(pdMS_TO_TICKS(10));
+   // }
     calibrateSensor();
+
+    while(1)
+    {
+        position = sensor.readLineBlack(sensor_values);
+        for(int i = 0; i < SENSOR_COUNT; i++)
+            printf("%d\t", sensor_values[i]);
+        printf("P: %d\n", position);
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
 } 
