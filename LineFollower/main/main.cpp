@@ -70,6 +70,16 @@ esp_err_t calibrateSensor(void)
     return ESP_OK;
 }
 
+void getMaxMinCal()
+{
+    for(int i = 0; i < SENSOR_COUNT; i ++)
+        printf("%d\t", sensor.calibrationOn.minimum[i]);
+    printf("\n");
+    for (int i = 0; i < SENSOR_COUNT; i ++)
+        printf("%d\t", sensor.calibrationOn.maximum[i]);
+    printf("\n");
+   
+}
 
 extern "C" void app_main(void)
 {
@@ -81,7 +91,7 @@ extern "C" void app_main(void)
    //     vTaskDelay(pdMS_TO_TICKS(10));
    // }
     calibrateSensor();
-
+    getMaxMinCal();
     while(1)
     {
         position = sensor.readLineBlack(sensor_values);
