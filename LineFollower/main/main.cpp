@@ -49,7 +49,6 @@ esp_err_t createSensor(void)
     sensor.setTimeout(2500); //Set the timeout for Analog sensors
     sensor.setSamplesPerSensor(15); //Set the number of samples per sensor
     sensor.setEmitterPin(IR); //Set the emitter pin for the sensor
-    sensor.calibrate(); // Calibrate the sensor with emitters on
     return ESP_OK;
 }
 
