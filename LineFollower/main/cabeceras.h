@@ -29,7 +29,7 @@
 #define RDY GPIO_NUM_13
 
 //Pines de Leds
-#define LED1 GPIO_NUM_27
+#define YELLOW GPIO_NUM_27
 #define LED2 GPIO_NUM_14
 #define LEDESP GPIO_NUM_2
 

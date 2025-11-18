@@ -10,7 +10,7 @@ uint16_t position;
 esp_err_t configureGpio(void)
 {
     // Configure GPIO pins for input and output modes
-    gpio_reset_pin(LED1); // Reset LED pin
+    gpio_reset_pin(YELLOW); // Reset LED pin
     gpio_reset_pin(LED2);  // Reset LED1 pin
     gpio_reset_pin(RDY);   // Reset button pin
     gpio_reset_pin(LEDESP);  // Reset button pin
@@ -22,7 +22,7 @@ esp_err_t configureGpio(void)
     gpio_reset_pin(PWMB);  // Reset PWMB pin
     gpio_reset_pin(IR);    // Reset IR pin
     gpio_reset_pin(ISVM);  // Reset ISVM pin
-    gpio_set_direction(LED1, GPIO_MODE_OUTPUT);
+    gpio_set_direction(YELLOW, GPIO_MODE_OUTPUT);
     gpio_set_direction(LED2, GPIO_MODE_OUTPUT);
     gpio_set_direction(LEDESP, GPIO_MODE_OUTPUT);
     gpio_set_direction(RDY, GPIO_MODE_INPUT);  // Set button pin as input
@@ -87,7 +87,7 @@ esp_err_t calibrateSensor(void)
 {
     sensor.calibrate(QTRReadMode::On);
     printf("Calibración iniciada...\n");
-    gpio_set_level(LED1, 1);
+    gpio_set_level(YELLOW, 1);
     for (uint16_t i = 0; i < 150 ; ++i)
     {
         sensor.calibrate();
@@ -96,7 +96,7 @@ esp_err_t calibrateSensor(void)
 
     }
     printf("Calibración finalizada\n");
-    gpio_set_level(LED1, 0);
+    gpio_set_level(YELLOW, 0);
 
     return ESP_OK;
 }
