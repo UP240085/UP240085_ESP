@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
-#include "QTR8A.h"
+#include "QTR8A.h"              //Infrarrojo
+#include "driver/ledc.h"       // PWM CONTROL
 
 //Definición de infrarrojos, Sensor de Linea
 #define D1 GPIO_NUM_36
