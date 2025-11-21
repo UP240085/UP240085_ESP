@@ -3,6 +3,21 @@ QTR8A sensor;
 uint16_t sensor_values[SENSOR_COUNT];
 uint16_t position;
 
+//Variables de Control
+float KP = 0; // edición
+float KD = 0; // edición
+float KI = 0; // edición
+float setpoint = 3500;
+float error = 0;
+float error_pasado = 0;
+float derivada = 0;
+float integral = 0;
+float error_ante = 0;
+float ajuste = 0;
+float leftSpeed = 0;
+float rightSpeed = 0;
+float maxVel = 0; //edición
+
 //void leerLinea(void *pvParam){}
 //void control(void *pvParam){}
 //void moverse(int speedLeft, int speedRight){}
@@ -161,6 +176,27 @@ void pruebaMotores()
         moveMotors(0, 0);
         printf("Prueba de motores finalizada.\n");
     }
+
+
+void control(void *PvParams)
+{
+    while(1)
+    {
+        position = sensor.readLineBlack(sensor_values);
+        error = position - setpoint; // edición signo
+        derivada = error - error_pasado;
+        integral = error + error_pasado + error_ante;
+        ajuste = KP*error + KI*integral + KD*derivada;
+        error_ante = error_pasado;
+        error_pasado = error;
+        leftSpeed = maxVel + ajuste; //edición signo
+        rightSpeed = maxVel - ajuste; //edición signo
+        moveMotors(leftSpeed, rightSpeed); 
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+}
+
 
 extern "C" void app_main(void)
 {
