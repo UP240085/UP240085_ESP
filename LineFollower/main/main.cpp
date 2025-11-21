@@ -178,7 +178,7 @@ void pruebaMotores()
     }
 
 
-void control(void *PvParams)
+void controlTask(void *PvParams)
 {
     while(1)
     {
@@ -205,6 +205,7 @@ extern "C" void app_main(void)
     createSensor();
     setupPWM();
     
+    
     //void pruebaMotores();
 
     while(gpio_get_level(CAL) == 1) //Boton sin presionar
@@ -227,5 +228,7 @@ extern "C" void app_main(void)
         printf("P:%d\n", position);
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+
+    xTaskCreate(controlTask, "control", 2048, NULL, 1, NULL);
 
 }
