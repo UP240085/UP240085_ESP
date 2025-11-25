@@ -26,7 +26,7 @@ esp_err_t configureGpio(void)
 {
     // Configure GPIO pins for input and output modes
     gpio_reset_pin(YELLOW); // Reset LED pin
-    gpio_reset_pin(LED2);  // Reset LED1 pin
+    gpio_reset_pin(GREEN);  // Reset LED1 pin
     gpio_reset_pin(RDY);   // Reset button pin
     gpio_reset_pin(LEDESP);  // Reset button pin
     gpio_reset_pin(AIN1);  // Reset AIN1 pin
@@ -38,7 +38,7 @@ esp_err_t configureGpio(void)
     gpio_reset_pin(IR);    // Reset IR pin
     gpio_reset_pin(ISVM);  // Reset ISVM pin
     gpio_set_direction(YELLOW, GPIO_MODE_OUTPUT);
-    gpio_set_direction(LED2, GPIO_MODE_OUTPUT);
+    gpio_set_direction(GREEN, GPIO_MODE_OUTPUT);
     gpio_set_direction(LEDESP, GPIO_MODE_OUTPUT);
     gpio_set_direction(RDY, GPIO_MODE_INPUT);  // Set button pin as input
     gpio_set_pull_mode(RDY, GPIO_PULLUP_ONLY); // Activa el pull-up interno

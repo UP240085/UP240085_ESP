@@ -30,7 +30,7 @@
 
 //Pines de Leds
 #define YELLOW GPIO_NUM_27
-#define LED2 GPIO_NUM_14
+#define GREEN GPIO_NUM_14
 #define LEDESP GPIO_NUM_2
 
 #define ISVM GPIO_NUM_12
