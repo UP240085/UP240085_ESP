@@ -4,7 +4,7 @@ uint16_t sensor_values[SENSOR_COUNT];
 uint16_t position;
 
 //Variables de Control
-float KP = 0; // edición
+float KP = 0.1; // edición
 float KD = 0; // edición
 float KI = 0; // edición
 float setpoint = 3500;
@@ -16,7 +16,7 @@ float error_ante = 0;
 float ajuste = 0;
 float leftSpeed = 0;
 float rightSpeed = 0;
-float maxVel = 0; //edición
+float maxVel = 70; //edición
 
 //void leerLinea(void *pvParam){}
 //void control(void *pvParam){}
@@ -68,6 +68,22 @@ void setupPWM(void)
     };
     ledc_timer_config(&ledc_timer);
 
+    // Configuración del canal A
+    ledc_channel_config_t ledc_channel_A = {
+        .gpio_num = PWMA, // Primero el GPIO
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_0,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = LEDC_TIMER_0,
+        .duty = 0,
+        .hpoint = 0,
+        .sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD, // Deshabilitar el modo de sueño
+        .flags = {
+            .output_invert = 0 // No invertir la salida
+        }};
+    ledc_channel_config(&ledc_channel_A);
+
+    ledc_fade_func_install(0); // Instala la función de desvanecimiento
 
     // Configuración del canal B
     ledc_channel_config_t ledc_channel_B = {
@@ -131,11 +147,11 @@ esp_err_t moveMotors(int16_t leftSpeed, int16_t rightSpeed)
 {
     // Left motor
     if (leftSpeed > 0) {
-        gpio_set_level(AIN1, 1);
-        gpio_set_level(AIN2, 0);
-    } else if (leftSpeed < 0) {
         gpio_set_level(AIN1, 0);
         gpio_set_level(AIN2, 1);
+    } else if (leftSpeed < 0) {
+        gpio_set_level(AIN1, 1);
+        gpio_set_level(AIN2, 0);
         leftSpeed = -leftSpeed;
     } else {
         gpio_set_level(AIN1, 0);
@@ -156,6 +172,8 @@ esp_err_t moveMotors(int16_t leftSpeed, int16_t rightSpeed)
         gpio_set_level(BIN2, 0);
     }
     //TODO: Enviar señal PWM al motor derecho
+     if (leftSpeed > 255) leftSpeed = 255; 
+    if (rightSpeed > 255) rightSpeed = 255; 
     ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, leftSpeed , 0);
     ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, rightSpeed , 0);
 
@@ -165,6 +183,7 @@ esp_err_t moveMotors(int16_t leftSpeed, int16_t rightSpeed)
 void pruebaMotores()
     {
         printf("Probando motores...\n");
+        gpio_set_level(YELLOW, 1);
         moveMotors(200, 200);
         vTaskDelay(pdMS_TO_TICKS(2000));
         moveMotors(-200, -200);
@@ -175,6 +194,7 @@ void pruebaMotores()
         vTaskDelay(pdMS_TO_TICKS(2000));
         moveMotors(0, 0);
         printf("Prueba de motores finalizada.\n");
+        gpio_set_level(YELLOW, 0);
     }
 
 
@@ -189,8 +209,8 @@ void controlTask(void *PvParams)
         ajuste = KP*error + KI*integral + KD*derivada;
         error_ante = error_pasado;
         error_pasado = error;
-        leftSpeed = maxVel + ajuste; //edición signo
-        rightSpeed = maxVel - ajuste; //edición signo
+        leftSpeed = maxVel - ajuste; //edición signo
+        rightSpeed = maxVel + ajuste; //edición signo
         moveMotors(leftSpeed, rightSpeed); 
         vTaskDelay(pdMS_TO_TICKS(10));
     }
@@ -205,9 +225,6 @@ extern "C" void app_main(void)
     createSensor();
     setupPWM();
     
-    
-    //void pruebaMotores();
-
     while(gpio_get_level(CAL) == 1) //Boton sin presionar
     {
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -215,11 +232,19 @@ extern "C" void app_main(void)
     calibrateSensor();
     getMaxMinCal();
 
-     while(gpio_get_level(CAL) == 1) //Boton sin presionar
+   // void pruebaMotores();
+
+     while(gpio_get_level(RDY) == 1) //Boton sin presionar
     {
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     
+    gpio_set_level(GREEN, 1);
+   
+    xTaskCreate(controlTask, "control", 2048, NULL, 1, NULL);
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    gpio_set_level(GREEN, 0);
     while(1)
     {
         position = sensor.readLineBlack(sensor_values);
@@ -228,7 +253,5 @@ extern "C" void app_main(void)
         printf("P:%d\n", position);
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-
-    xTaskCreate(controlTask, "control", 2048, NULL, 1, NULL);
 
 }
