@@ -4,12 +4,12 @@ uint16_t sensor_values[SENSOR_COUNT];
 uint16_t position;
 
 //Variables de Control
-float KP = 0.1; // edición
-float KD = 0; // edición
+float KP = 0.0425; // edición
+float KD = 0.000; // edición
 float KI = 0; // edición
 float setpoint = 3500;
 float error = 0;
-float error_pasado = 0;
+float error_pasado = 0; 
 float derivada = 0;
 float integral = 0;
 float error_ante = 0;
@@ -172,10 +172,20 @@ esp_err_t moveMotors(int16_t leftSpeed, int16_t rightSpeed)
         gpio_set_level(BIN2, 0);
     }
     //TODO: Enviar señal PWM al motor derecho
-     if (leftSpeed > 255) leftSpeed = 255; 
+    int bloqueo = leftSpeed + rightSpeed;
+    if (bloqueo < 20)
+    {
+        leftSpeed = leftSpeed + maxVel;
+        rightSpeed = rightSpeed + maxVel;
+    } 
+    if(rightSpeed < 25) rightSpeed = 25;
+    if (leftSpeed < 25) leftSpeed = 25;
+
+    if (leftSpeed > 255) leftSpeed = 255; 
     if (rightSpeed > 255) rightSpeed = 255; 
     ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, leftSpeed , 0);
     ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, rightSpeed , 0);
+    printf("Left Speed: %d,\t Right Speed: %d\n", leftSpeed, rightSpeed);
 
     return ESP_OK;
 }
