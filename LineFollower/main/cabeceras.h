@@ -40,6 +40,6 @@
 #define CAL_MIN 1023  //Valor minimo de calibración
 #define CAL_MAX 4095  //Valor máximo de calibración
 #define SETPOINT 3500 // depende de la posición ideal
-#define THRESHOLD 300 // Umbral para sensores QTR (si detecta mas de este valor, es línea)
+#define THRESHOLD 700 // Umbral para sensores QTR (si detecta mas de este valor, es línea)
 #define MAX_SPEED 255 // Velocidad máxima del robot (0-255)
 #define UMBRAL_LINEA 980 // Umbral para detectar la línea

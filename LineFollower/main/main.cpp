@@ -4,8 +4,8 @@ uint16_t sensor_values[SENSOR_COUNT];
 uint16_t position;
 
 //Variables de Control
-float KP = 0.0425; // edición
-float KD = 0.000; // edición
+float KP = 0.029; // edición
+float KD = 0.29; // edición
 float KI = 0; // edición
 float setpoint = 3500;
 float error = 0;
@@ -16,7 +16,7 @@ float error_ante = 0;
 float ajuste = 0;
 float leftSpeed = 0;
 float rightSpeed = 0;
-float maxVel = 70; //edición
+float maxVel = 102; //edición
 
 //void leerLinea(void *pvParam){}
 //void control(void *pvParam){}
@@ -89,7 +89,7 @@ void setupPWM(void)
     ledc_channel_config_t ledc_channel_B = {
         .gpio_num = PWMB, // Primero el GPIO
         .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel = LEDC_CHANNEL_0,
+        .channel = LEDC_CHANNEL_1,
         .intr_type = LEDC_INTR_DISABLE,
         .timer_sel = LEDC_TIMER_0,
         .duty = 0,
@@ -114,23 +114,6 @@ esp_err_t createSensor(void)
     return ESP_OK;
 }
 
-esp_err_t calibrateSensor(void)
-{
-    sensor.calibrate(QTRReadMode::On);
-    printf("Calibración iniciada...\n");
-    gpio_set_level(YELLOW, 1);
-    for (uint16_t i = 0; i < 150 ; ++i)
-    {
-        sensor.calibrate();
-        printf("%d\n", i);
-        vTaskDelay(pdMS_TO_TICKS(10));
-
-    }
-    printf("Calibración finalizada\n");
-    gpio_set_level(YELLOW, 0);
-
-    return ESP_OK;
-}
 
 void getMaxMinCal()
 {
@@ -178,14 +161,40 @@ esp_err_t moveMotors(int16_t leftSpeed, int16_t rightSpeed)
         leftSpeed = leftSpeed + maxVel;
         rightSpeed = rightSpeed + maxVel;
     } 
-    if(rightSpeed < 25) rightSpeed = 25;
-    if (leftSpeed < 25) leftSpeed = 25;
+    if(rightSpeed < 30) rightSpeed = 30;
+    if (leftSpeed < 30) leftSpeed = 30;
 
     if (leftSpeed > 255) leftSpeed = 255; 
     if (rightSpeed > 255) rightSpeed = 255; 
     ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, leftSpeed , 0);
-    ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, rightSpeed , 0);
-    printf("Left Speed: %d,\t Right Speed: %d\n", leftSpeed, rightSpeed);
+    ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_1, rightSpeed , 0);
+    //printf("Left Speed: %d,\t Right Speed: %d\n", leftSpeed, rightSpeed);
+
+    return ESP_OK;
+}
+
+esp_err_t calibrateSensor(void)
+{
+    sensor.calibrate(QTRReadMode::On);
+    printf("Calibración iniciada...\n");
+    gpio_set_level(YELLOW, 1);
+    for (uint16_t i = 0; i < 150 ; ++i)
+    {
+        if(i < 25)
+            moveMotors(40, -40); //Girar a la izquierda
+        else if(i < 100)
+            moveMotors(-40, 40); //Girar a la derecha
+        else
+            moveMotors(40, -40); //Girar a la izquierda
+        sensor.calibrate();
+        printf("%d\n", i);
+        vTaskDelay(pdMS_TO_TICKS(10));
+
+    }
+
+    moveMotors(0, 0);
+    printf("Calibración finalizada\n");
+    gpio_set_level(YELLOW, 0);
 
     return ESP_OK;
 }
